@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 # === НАСТРОЙКА GEMINI ===
-genai.configure(api_key="AIzaSyBk128x3JBA2N7Bh8dfVBlPJG3n2g5AimU")  # <-- сюда вставь свой API ключ
+genai.configure(api_key="AIzaSyBk128x3JBA2N7Bh8dfVBlPJG3n2g5AimU")
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # === ЯЗЫК ===
@@ -40,7 +40,7 @@ def translate(text, target_lang):
 # === ПОГОДА ===
 def get_weather(city, lang='en'):
     try:
-        api_key = "9c12f42c7f94de5fff10ac8b877b10b1"  # <-- сюда вставь ключ OpenWeatherMap
+        api_key = "9c12f42c7f94de5fff10ac8b877b10b1"
         url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric&lang={lang}"
         response = requests.get(url)
         if response.status_code == 200:
@@ -85,6 +85,30 @@ def chat_with_gemini(prompt, lang='en'):
     except Exception as e:
         return f"Ошибка Gemini: {e}"
 
+# === PlayHT: ОЗВУЧКА ===
+def speak_with_playht(text):
+    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"
+    url = "https://api.play.ht/api/v2/tts"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "voice": "s3://voice-cloning-zero-shot/9QRDC80DsuBFmALDPipT-/jarvis/manifest.json",
+        "text": text,
+        "output_format": "mp3"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        data = response.json()
+        return data.get("audioUrl", None)
+    except Exception as e:
+        print("Ошибка PlayHT:", e)
+        return None
+
 # === ОБРАБОТКА КОМАНД ===
 def process_command(command):
     lang = detect_language(command)
@@ -107,10 +131,9 @@ def ask():
     query = data.get("query", "")
     print(">>> Запрос:", query)
     answer = process_command(query)
-    return jsonify({"answer": answer})
+    audio_url = speak_with_playht(answer)
+    return jsonify({"answer": answer, "audio": audio_url})
 
 # === ЗАПУСК ===
-import os
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
