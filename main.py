@@ -10,7 +10,7 @@ from langdetect import detect
 from flask import Flask, request, jsonify
 
 # === НАСТРОЙКА FLASK ===
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 CORS(app)
 
 # === НАСТРОЙКА GEMINI ===
@@ -87,7 +87,7 @@ def chat_with_gemini(prompt, lang='en'):
 
 # === ELEVENLABS ОЗВУЧКА ===
 def speak_with_elevenlabs(text):
-    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"  # если это тот же ключ
+    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"
     voice_id = "nRv26Frg48AB1zDFv0dj"
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
@@ -107,15 +107,16 @@ def speak_with_elevenlabs(text):
     try:
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            path = "static/response.mp3"
+            # Сохраняем файл в static
+            path = os.path.join("static", "response.mp3")
             with open(path, "wb") as f:
                 f.write(response.content)
-            return f"/{path}"
+            return "/static/response.mp3"
         else:
             print("Ошибка ElevenLabs:", response.text)
             return None
     except Exception as e:
-        print("Ошибка запроса к ElevenLabs:", e)
+        print("Ошибка при озвучке:", e)
         return None
 
 # === ОБРАБОТКА КОМАНД ===
