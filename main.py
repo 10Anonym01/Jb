@@ -10,11 +10,11 @@ from langdetect import detect
 from flask import Flask, request, jsonify
 
 # === НАСТРОЙКА FLASK ===
-app = Flask(__name__, static_folder="static", static_url_path="/static")
+app = Flask(__name__)
 CORS(app)
 
 # === НАСТРОЙКА GEMINI ===
-genai.configure(api_key="AIzaSyBk128x3JBA2N7Bh8dfVBlPJG3n2g5AimU")
+genai.configure(api_key="AIzaSyBk128x3JBA2N7Bh8dfVBlPJG3n2g5AimU")  # <-- сюда вставь свой API ключ
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # === ЯЗЫК ===
@@ -40,7 +40,7 @@ def translate(text, target_lang):
 # === ПОГОДА ===
 def get_weather(city, lang='en'):
     try:
-        api_key = "9c12f42c7f94de5fff10ac8b877b10b1"
+        api_key = "9c12f42c7f94de5fff10ac8b877b10b1"  # <-- сюда вставь ключ OpenWeatherMap
         url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric&lang={lang}"
         response = requests.get(url)
         if response.status_code == 200:
@@ -85,40 +85,6 @@ def chat_with_gemini(prompt, lang='en'):
     except Exception as e:
         return f"Ошибка Gemini: {e}"
 
-# === ELEVENLABS ОЗВУЧКА ===
-def speak_with_elevenlabs(text):
-    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"
-    voice_id = "nRv26Frg48AB1zDFv0dj"
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-
-    headers = {
-        "xi-api-key": api_key,
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "text": text,
-        "voice_settings": {
-            "stability": 0.4,
-            "similarity_boost": 1.0
-        }
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            # Сохраняем файл в static
-            path = os.path.join("static", "response.mp3")
-            with open(path, "wb") as f:
-                f.write(response.content)
-            return "/static/response.mp3"
-        else:
-            print("Ошибка ElevenLabs:", response.text)
-            return None
-    except Exception as e:
-        print("Ошибка при озвучке:", e)
-        return None
-
 # === ОБРАБОТКА КОМАНД ===
 def process_command(command):
     lang = detect_language(command)
@@ -141,11 +107,10 @@ def ask():
     query = data.get("query", "")
     print(">>> Запрос:", query)
     answer = process_command(query)
-    audio_url = speak_with_elevenlabs(answer)
-    return jsonify({"answer": answer, "audio": audio_url})
+    return jsonify({"answer": answer})
 
 # === ЗАПУСК ===
+import os
+
 if __name__ == "__main__":
-    if not os.path.exists("static"):
-        os.makedirs("static")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.run(host="0.0.0.0", port=10000)
