@@ -85,28 +85,37 @@ def chat_with_gemini(prompt, lang='en'):
     except Exception as e:
         return f"Ошибка Gemini: {e}"
 
-# === PlayHT: ОЗВУЧКА ===
-def speak_with_playht(text):
-    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"
-    url = "https://api.play.ht/api/v2/tts"
+# === ELEVENLABS ОЗВУЧКА ===
+def speak_with_elevenlabs(text):
+    api_key = "5ICKczbFq8NX6s1qf42o26Dkkvm2"  # если это тот же ключ
+    voice_id = "nRv26Frg48AB1zDFv0dj"
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "xi-api-key": api_key,
         "Content-Type": "application/json"
     }
 
     payload = {
-        "voice": "s3://voice-cloning-zero-shot/9QRDC80DsuBFmALDPipT-/jarvis/manifest.json",
         "text": text,
-        "output_format": "mp3"
+        "voice_settings": {
+            "stability": 0.4,
+            "similarity_boost": 1.0
+        }
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        data = response.json()
-        return data.get("audioUrl", None)
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            path = "static/response.mp3"
+            with open(path, "wb") as f:
+                f.write(response.content)
+            return f"/{path}"
+        else:
+            print("Ошибка ElevenLabs:", response.text)
+            return None
     except Exception as e:
-        print("Ошибка PlayHT:", e)
+        print("Ошибка запроса к ElevenLabs:", e)
         return None
 
 # === ОБРАБОТКА КОМАНД ===
@@ -131,9 +140,11 @@ def ask():
     query = data.get("query", "")
     print(">>> Запрос:", query)
     answer = process_command(query)
-    audio_url = speak_with_playht(answer)
+    audio_url = speak_with_elevenlabs(answer)
     return jsonify({"answer": answer, "audio": audio_url})
 
 # === ЗАПУСК ===
 if __name__ == "__main__":
+    if not os.path.exists("static"):
+        os.makedirs("static")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
