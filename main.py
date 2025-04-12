@@ -1,5 +1,6 @@
 # === ИМПОРТЫ ===
 import os
+import re
 from flask_cors import CORS
 import google.generativeai as genai
 import requests
@@ -38,9 +39,14 @@ def translate(text, target_lang):
         return text
 
 # === ПОГОДА ===
-def get_weather(city, lang='en'):
+def extract_city(text):
+    match = re.search(r"(в|in)\s+([a-zA-Zа-яА-ЯёЁ\- ]+)", text)
+    return match.group(2).strip() if match else text.split()[-1]
+
+def get_weather(command, lang='en'):
     try:
         api_key = "9c12f42c7f94de5fff10ac8b877b10b1"
+        city = extract_city(command)
         url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric&lang={lang}"
         response = requests.get(url)
         if response.status_code == 200:
@@ -53,12 +59,13 @@ def get_weather(city, lang='en'):
         return "Ошибка при получении погоды." if lang == 'ru' else "Error fetching weather."
 
 # === ВРЕМЯ ===
-def get_time(city):
+def get_time(command):
     try:
+        city = extract_city(command)
         response = requests.get("https://worldtimeapi.org/api/timezone")
         zones = response.json()
         for zone in zones:
-            if city.lower() in zone.lower():
+            if city.lower() in zone.lower().split("/")[-1].lower():
                 time_data = requests.get(f"https://worldtimeapi.org/api/timezone/{zone}").json()
                 dt = datetime.fromisoformat(time_data["datetime"])
                 return dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -90,11 +97,9 @@ def process_command(command):
     lang = detect_language(command)
     cmd = command.lower()
     if "погода" in cmd or "weather" in cmd:
-        city = command.split()[-1]
-        return get_weather(city, lang)
+        return get_weather(command, lang)
     elif "время" in cmd or "time" in cmd:
-        city = command.split()[-1]
-        return get_time(city)
+        return get_time(command)
     elif any(op in cmd for op in ["+", "-", "*", "/", "^"]):
         return calculate_expression(command)
     else:
