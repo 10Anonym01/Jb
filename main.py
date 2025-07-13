@@ -15,7 +15,7 @@ app = Flask(__name__)
 CORS(app)
 
 # === GEMINI ===
-genai.configure(api_key="AIzaSyBk128x3JBA2N7Bh8dfVBlPJG3n2g5AimU")
+genai.configure(api_key="AIzaSyDS3FZLEMhoXl8-DArTFoOLFZBocP7AlsA")
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # === ЯЗЫК ===
