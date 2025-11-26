@@ -15,8 +15,8 @@ app = Flask(__name__)
 CORS(app)
 
 # === GEMINI ===
-genai.configure(api_key="AIzaSyC85prT5UV_9rmdNvup6E_sO8mb2TBPuC4")
-model = genai.GenerativeModel("gemini-1.5-pro")
+genai.configure(api_key="AIzaSyC7YnbBRV4iyrYd7PyAEBdfyCYiHZHFJj0")
+model = genai.GenerativeModel("gemini-pro")
 
 # === ЯЗЫК ===
 def detect_language(text):
